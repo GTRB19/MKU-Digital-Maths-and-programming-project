@@ -25,6 +25,7 @@ def remove_category(category_name):
     cursor.execute(f"Delete from Category where CategoryName = '{category_name}'")
     conn.commit()
 
+# Add an update function
 
 add_category("Shopping", 100)
 remove_category("Shopping")
