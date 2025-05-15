@@ -95,8 +95,5 @@ def return_monthly_dashboard(Date_selected):
 
     # Need to work out efficient way to work out percentage spent, maybe create list of percents then add to panda
     df["Percentage"] = Percentage_list
+    return df
 
-    print(df)
-
-
-return_monthly_dashboard("2025-05")
