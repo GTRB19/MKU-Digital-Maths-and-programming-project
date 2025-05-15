@@ -36,19 +36,18 @@
 
 
 import tkinter as tk
+from tkinter import ttk
 
-master = tk.Tk()
+root = tk.Tk()
+root.geometry("400x300")
+root.title("Tkinter Treeview")
+
+treeview = ttk.Treeview()
+level1 = treeview.insert("", tk.END, text="San Jose")
+treeview.insert(level1, tk.END, text="John Doe")
+treeview.insert(level1, tk.END, text="Jane Doe")
+
+treeview.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+root.mainloop()
 
 
-def callback():
-    global buttonClicked
-    buttonClicked = not buttonClicked
-    print("ubi[no")
-
-
-buttonClicked = False  # Bfore first click
-
-b = tk.Button(master, text="Smth", command=callback)
-b.pack()
-
-master.mainloop()

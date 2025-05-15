@@ -114,6 +114,7 @@ class App(tk.Tk):
         self.label.pack()
         self.setup_date()
         self.percentage()
+        self.add_table()
 
         # self.combo_box.bind("<<ComboboxSelected>>", lambda: self.percentage)
         # self.combo_box_2.bind("<<ComboboxSelected>>", lambda: self.percentage)  # Might have to remove all widgets, then rewrite due to the buttons being local variables
@@ -137,23 +138,24 @@ class App(tk.Tk):
 
 #--------------------------------------------------------------------------------------------#
     def percentage(self):
-        month = str(self.combo_box.current() + 1)
-        if len(month) == 1:
-            month = "0" + month
-        date = str(self.combo_box_2.get()) + "-" + month
-        data = return_monthly_dashboard(date)
+        data = self.return_month()
         data = data.sort_values(by = ["Percentage"], ascending=False)
-        print(data)
         count = 0
         xcor = 60
         for row in data.itertuples():
             if count == 5: #Only top 5 results shown
                 break
-            print(row.Category, row.Percentage)
             self.create_percentage_bar(row.Category,row.Percentage, xcor,  120, count) #Autonamte numbers
             count += 1
             xcor += 140
 
+    def return_month(self):
+        month = str(self.combo_box.current() + 1)
+        if len(month) == 1:
+            month = "0" + month
+        date = str(self.combo_box_2.get()) + "-" + month
+        data = return_monthly_dashboard(date)
+        return data
     def create_percentage_bar(self, category, percentage, x,y, count): # Count may be needed, as issues may arise with buttons
         tempbar = ttk.Progressbar()
         tempbar.place(x = x, y = y)
@@ -164,6 +166,12 @@ class App(tk.Tk):
     def buttonclicked(self, buttonname): # This can be used to bring up certain categories
         print(buttonname.cget('text'))
 
+    def add_table(self):
+        self.tree  = ttk.Treeview(self, column=("Category","Budget","Spent"), show="headings")
+        self.tree.insert("", tk.END, text="San Jose")
+        self.tree.place(x=10, y=270)
+        data = self.return_month()
+        print(data) # Working with panda to insert data
 #-------------------------------------------------------------------------------------------------------------------#
 
 if __name__ == "__main__":
