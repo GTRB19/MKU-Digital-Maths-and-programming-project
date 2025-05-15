@@ -1,6 +1,8 @@
 import sqlite3
 from datetime import date
 
+import pandas as pd
+
 conn = sqlite3.connect('MKU_digital_assignment.db')
 cursor = conn.cursor()
 
@@ -55,11 +57,46 @@ def add_transaction(CategoryID, Amount):
 def monthly_return(Date):
     Date = Date[:7] + "%"
     print(Date)
-    cursor.execute(f"Select * from Spending where Date like '{Date}'")
-    print(cursor.fetchall())
+    cursor.execute(f'''Select t1.CategoryName, t1.CategoryBudget, t2.Amount
+        from Category t1
+        join Spending t2 on t1.CategoryID = t2.CategoryID
+        where Date like '{Date}' ''')
+    return cursor.fetchall()
 
 
 # ---------------Any Bulk major changes, hopefully smaller per transaction can be fulfilled in GUI----------------------
 
 
+# -------------------------------------------------------Logic code------------------------------------------------------
 
+def return_monthly_dashboard(Date_selected):
+    Percentage_list = []
+    Spending = {
+        'Category': [],
+        'Budget': [],
+        'Spent': []
+    }
+    df = pd.DataFrame(Spending)
+    Data = monthly_return(Date_selected)
+
+    for record in Data:  # Writing the database to panda
+        print(record[0])
+        if (df == record[0]).any().any():  # Checks if category already in the record
+            row_index = df.loc[df['Category'] == record[0]].index[0]
+            cell_value = df['Spent'].loc[df.index[row_index]] + record[2]
+            df.at[row_index, 'Spent'] = cell_value
+        else:
+            New_row = [record[0], record[1], record[2]]
+            df.loc[len(df)] = New_row
+
+    for row in df.itertuples():
+        percentage = round(row.Spent / row.Budget * 100)
+        Percentage_list.append(percentage)
+
+    # Need to work out efficient way to work out percentage spent, maybe create list of percents then add to panda
+    df["Percentage"] = Percentage_list
+
+    print(df)
+
+
+return_monthly_dashboard("2025-05")
