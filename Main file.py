@@ -70,6 +70,7 @@ def monthly_return(Date):
 # -------------------------------------------------------Logic code------------------------------------------------------
 
 def return_monthly_dashboard(Date_selected):
+    Percentage_list = []
     Spending = {
         'Category': [],
         'Budget': [],
@@ -78,7 +79,7 @@ def return_monthly_dashboard(Date_selected):
     df = pd.DataFrame(Spending)
     Data = monthly_return(Date_selected)
 
-    for record in Data: # Writing the database to panda
+    for record in Data:  # Writing the database to panda
         print(record[0])
         if (df == record[0]).any().any():  # Checks if category already in the record
             row_index = df.loc[df['Category'] == record[0]].index[0]
@@ -87,10 +88,13 @@ def return_monthly_dashboard(Date_selected):
         else:
             New_row = [record[0], record[1], record[2]]
             df.loc[len(df)] = New_row
-    print(df)
+
+    for row in df.itertuples():
+        percentage = round(row.Spent / row.Budget * 100)
+        Percentage_list.append(percentage)
 
     # Need to work out efficient way to work out percentage spent, maybe create list of percents then add to panda
-    df["Percentage"] = [1]
+    df["Percentage"] = Percentage_list
 
     print(df)
 
