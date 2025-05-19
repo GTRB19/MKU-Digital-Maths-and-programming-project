@@ -25,7 +25,8 @@ def add_category(category_name, category_budget):  # Adding categories and if th
         if question == "y":
             update_category(category_name, category_budget)
         else:
-            print("No Query executed")
+            # print("No Query executed")
+            pass
 
 
 def remove_category(category_name, new_category):  # Removing categories, new category can be other
@@ -56,7 +57,6 @@ def change_category(old_cat, new_cat):
 def add_transaction(CategoryName, Amount):  # Maybe need a check to ensure no null values
     if "{" and "}" in CategoryName:
         CategoryName = CategoryName.strip("{").strip("}")
-    print(CategoryName, Amount)
     date_now = date.today()
     # cursor.execute(f"Insert into Spending (CategoryID, Amount, Date) VALUES ((Select CategoryID from Category where CategoryName = '{CategoryName}'),'{Amount}','{date_now}')")
     # conn.commit()
@@ -87,6 +87,7 @@ def return_monthly_dashboard(Date_selected, Averages):  # Check may be needed to
     }
     df = pd.DataFrame(Spending)
     Data = monthly_return(Date_selected)
+    print(Data)
     match Averages:
         case True:
             Percentage_list = []
@@ -110,8 +111,6 @@ def return_monthly_dashboard(Date_selected, Averages):  # Check may be needed to
                 df.loc[len(df)] = New_row
             df["TransactionID"] = TransactionID
 
-        # Need to work out efficient way to work out percentage spent, maybe create list of percents then add to panda
-
     return df
 
 
@@ -127,16 +126,24 @@ class App(tk.Tk):
         self.geometry('800x600')
         self.label = tk.Label(self, text='Budget Tracker')
         self.label.pack()
+        self.setup_date()
         self.start()
 
-        # self.combo_box.bind("<<ComboboxSelected>>", lambda: self.percentage)
-        # self.combo_box_2.bind("<<ComboboxSelected>>", lambda: self.percentage)  # Might have to remove all widgets, then rewrite due to the buttons being local variables
+        self.combo_box.bind("<<ComboboxSelected>>", self.reset)
+        self.combo_box_2.bind("<<ComboboxSelected>>", self.reset)  # Might have to remove all widgets, then rewrite due to the buttons being local variables
+
+
 
     def start(self):
-        self.setup_date()
-        self.percentage()
+        self.percentage(0)
         self.add_table()
         self.add_buttons()
+
+    def reset(self, event):
+        for widget in self.winfo_children()[3:13]:
+            widget.destroy()
+        self.start()
+
 
     def setup_date(self):  # This will need to return an update
         months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October",
@@ -153,7 +160,7 @@ class App(tk.Tk):
         self.combo_box_2.place(x=185, y=50)
 
     # --------------------------------------------------------------------------------------------#
-    def percentage(self):
+    def percentage(self, event):
         data = self.return_month(True)
         data = data.sort_values(by=["Percentage"], ascending=False)
         count = 0
@@ -165,7 +172,8 @@ class App(tk.Tk):
             count += 1
             xcor += 140
 
-    def return_month(self, state):
+
+    def return_month(self, state):  #Date is not returning correctly
         month = str(self.combo_box.current() + 1)
         if len(month) == 1:
             month = "0" + month
@@ -174,6 +182,7 @@ class App(tk.Tk):
             data = return_monthly_dashboard(date, True)
         else:
             data = return_monthly_dashboard(date, False)
+
         return data
 
     def create_percentage_bar(self, category, percentage, x, y,
@@ -189,7 +198,6 @@ class App(tk.Tk):
 
     def add_table(self):  # Maybe add in a shop column  https://www.youtube.com/watch?v=yk9ZhoLdINo
         data = self.return_month(False)
-        print(data)  # Working with panda to insert data
         self.frame = tk.Frame(self)
         self.frame.place(x=0, y=300)
         self.table = Table(self.frame, dataframe=data)
@@ -242,7 +250,7 @@ class Transaction_Widget(tk.Toplevel):  # Self.destory to destory widget
             self.destroy()
         except ValueError:
             print("Enter a correct value")
-            self.destroy()
+            self.destroy() #Use alt + f4 to delete a window
         else:
             print("Error")
             self.destroy()
@@ -297,7 +305,6 @@ class Error_Window(tk.Toplevel):
         super().__init__(args)
         self.geometry("200x200")
         self.title("New Window")
-        print("ytes")
         self.name = name
         self.budget = budget
 

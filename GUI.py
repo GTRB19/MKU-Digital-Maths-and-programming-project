@@ -115,53 +115,54 @@
 #     testObj = windows()
 #     testObj.mainloop()
 
-import tkinter as tk
+# import tkinter as tk
+#
+# class NewWindow(tk.Toplevel):
+#     """Represents a new independent window."""
+#     def __init__(self, parent=None, main_window=None, *args, **kwargs):
+#         super().__init__(parent, *args, **kwargs)
+#         self.main_window = main_window  # Store a reference to the main window
+#         self.title("New Window")
+#         self.geometry("300x200")
+#         self.label = tk.Label(self, text="This is a new window!")
+#         self.label.pack(padx=20, pady=20)
+#         self.focus_set()
+#         self.grab_set()
+#         self.protocol("WM_DELETE_WINDOW", self.close_new_window) # Handle window close button
+#
+#     def close_new_window(self):
+#         """Closes the new window and optionally the main window."""
+#         if self.main_window:
+#             self.main_window.destroy()  # Destroy the main window
+#         self.destroy()  # Destroy the new window
+#
+# class MainWindow(tk.Tk):
+#     """The main application window."""
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, **kwargs)
+#         self.title("Main Application")
+#         self.geometry("400x300")
+#         self.open_button = tk.Button(self, text="Open New Window", command=self.open_new_window)
+#         self.open_button.pack(pady=20)
+#
+#     def open_new_window(self):
+#         """Creates and displays the NewWindow and closes the MainWindow."""
+#         new_window = NewWindow(self, main_window=self) # Pass a reference to self
+#         # self.withdraw()  # Hide the main window (optional, but often desired)
+#         # self.center_window(new_window)
+#
+#     def center_window(self, window):
+#         """Centers the given window relative to the screen."""
+#         window.update_idletasks()
+#         screen_width = self.winfo_screenwidth()
+#         screen_height = self.winfo_screenheight()
+#         child_width = window.winfo_width()
+#         child_height = window.winfo_height()
+#         x = (screen_width - child_width) // 2
+#         y = (screen_height - child_height) // 2
+#         window.geometry(f"+{x}+{y}")
+#
+# if __name__ == "__main__":
+#     app = MainWindow()
+#     app.mainloop()
 
-class NewWindow(tk.Toplevel):
-    """Represents a new independent window."""
-    def __init__(self, parent=None, main_window=None, *args, **kwargs):
-        super().__init__(parent, *args, **kwargs)
-        self.main_window = main_window  # Store a reference to the main window
-        self.title("New Window")
-        self.geometry("300x200")
-        self.label = tk.Label(self, text="This is a new window!")
-        self.label.pack(padx=20, pady=20)
-        self.focus_set()
-        self.grab_set()
-        self.protocol("WM_DELETE_WINDOW", self.close_new_window) # Handle window close button
-
-    def close_new_window(self):
-        """Closes the new window and optionally the main window."""
-        if self.main_window:
-            self.main_window.destroy()  # Destroy the main window
-        self.destroy()  # Destroy the new window
-
-class MainWindow(tk.Tk):
-    """The main application window."""
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.title("Main Application")
-        self.geometry("400x300")
-        self.open_button = tk.Button(self, text="Open New Window", command=self.open_new_window)
-        self.open_button.pack(pady=20)
-
-    def open_new_window(self):
-        """Creates and displays the NewWindow and closes the MainWindow."""
-        new_window = NewWindow(self, main_window=self) # Pass a reference to self
-        # self.withdraw()  # Hide the main window (optional, but often desired)
-        # self.center_window(new_window)
-
-    def center_window(self, window):
-        """Centers the given window relative to the screen."""
-        window.update_idletasks()
-        screen_width = self.winfo_screenwidth()
-        screen_height = self.winfo_screenheight()
-        child_width = window.winfo_width()
-        child_height = window.winfo_height()
-        x = (screen_width - child_width) // 2
-        y = (screen_height - child_height) // 2
-        window.geometry(f"+{x}+{y}")
-
-if __name__ == "__main__":
-    app = MainWindow()
-    app.mainloop()
