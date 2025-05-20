@@ -3,7 +3,6 @@ import sqlite3
 import tkinter as tk
 from datetime import date
 from tkinter import ttk
-from time import sleep
 
 import pandas as pd
 from pandastable import Table
@@ -62,12 +61,32 @@ def add_transaction(CategoryName, Amount):  # Maybe need a check to ensure no nu
     # conn.commit()
 
 
+def update_transaction(ID, Category, Budget, Spent, Date):
+    try:
+        ID = int(ID)
+        Budget = float(Budget)
+        Spent = float(Spent)
+    except:
+        print("Invalid value")
+    else:
+        cursor.execute(
+            f"Update Spending Set CategoryID = (SELECT CategoryID from Category where CategoryName = '{Category}'), Amount = {Spent}, Date = '{Date}' where TransactionID = {ID}")
+        cursor.execute(f"Update Category set CategoryName = '{Category}', CategoryBudget = {Budget} where CategoryID = (SELECT CategoryID from Spending where TransactionID = {ID})") #Need to finish this, then done
+        conn.commit()
+        print("Succes")
+
+
 def monthly_return(Date):
-    if len(Date) > 7:
+    if Date == "*":
+        cursor.execute(f'''Select t1.CategoryName, t1.CategoryBudget, t2.Amount, t2.TransactionID,t2.Date
+                from Category t1
+                join Spending t2 on t1.CategoryID = t2.CategoryID''')
+        return cursor.fetchall()
+    elif len(Date) > 7:
         Date = Date[:7] + "%"
     else:
         Date = Date + "%"
-    cursor.execute(f'''Select t1.CategoryName, t1.CategoryBudget, t2.Amount, t2.TransactionID
+    cursor.execute(f'''Select t1.CategoryName, t1.CategoryBudget, t2.Amount, t2.TransactionID, t2.Date
         from Category t1
         join Spending t2 on t1.CategoryID = t2.CategoryID
         where Date like '{Date}' ''')
@@ -79,17 +98,22 @@ def monthly_return(Date):
 
 # -------------------------------------------------------Logic code------------------------------------------------------
 
-def return_monthly_dashboard(Date_selected, Averages):  # Check may be needed to ensure correct date format
+def return_monthly_dashboard(Date_selected, Averages):  # Do I need to tidy this up by breaking into many functions
     Spending = {
         'Category': [],
         'Budget': [],
-        'Spent': []
+        'Spent': [],
+        'Date': []
     }
-    df = pd.DataFrame(Spending)
     Data = monthly_return(Date_selected)
-    print(Data)
     match Averages:
-        case True:
+        case 0:
+            Spending = {
+                'Category': [],
+                'Budget': [],
+                'Spent': []
+            }
+            df = pd.DataFrame(Spending)
             Percentage_list = []
             for record in Data:  # Writing the database to panda, this one combines categories together
                 if (df == record[0]).any().any():  # Checks if category already in the record
@@ -103,14 +127,14 @@ def return_monthly_dashboard(Date_selected, Averages):  # Check may be needed to
                 percentage = round(row.Spent / row.Budget * 100)
                 Percentage_list.append(percentage)
             df["Percentage"] = Percentage_list
-        case False:
+        case 1:
+            df = pd.DataFrame(Spending)
             TransactionID = []
             for record in Data:
-                New_row = [record[0], record[1], record[2]]
+                New_row = [record[0], record[1], record[2], record[4]]
                 TransactionID.append(record[3])
                 df.loc[len(df)] = New_row
             df["TransactionID"] = TransactionID
-
     return df
 
 
@@ -130,9 +154,8 @@ class App(tk.Tk):
         self.start()
 
         self.combo_box.bind("<<ComboboxSelected>>", self.reset)
-        self.combo_box_2.bind("<<ComboboxSelected>>", self.reset)  # Might have to remove all widgets, then rewrite due to the buttons being local variables
-
-
+        self.combo_box_2.bind("<<ComboboxSelected>>",
+                              self.reset)  # Might have to remove all widgets, then rewrite due to the buttons being local variables
 
     def start(self):
         self.percentage(0)
@@ -143,7 +166,6 @@ class App(tk.Tk):
         for widget in self.winfo_children()[3:13]:
             widget.destroy()
         self.start()
-
 
     def setup_date(self):  # This will need to return an update
         months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October",
@@ -172,16 +194,15 @@ class App(tk.Tk):
             count += 1
             xcor += 140
 
-
-    def return_month(self, state):  #Date is not returning correctly
+    def return_month(self, state):  # Date is not returning correctly
         month = str(self.combo_box.current() + 1)
         if len(month) == 1:
             month = "0" + month
         date = str(self.combo_box_2.get()) + "-" + month
         if state == True:
-            data = return_monthly_dashboard(date, True)
+            data = return_monthly_dashboard(date, 0)
         else:
-            data = return_monthly_dashboard(date, False)
+            data = return_monthly_dashboard(date, 1)
 
         return data
 
@@ -194,14 +215,19 @@ class App(tk.Tk):
         tempbutton.place(x=x, y=y + 30)
 
     def buttonclicked(self, buttonname):  # This can be used to bring up certain categories
-        print(buttonname.cget('text'))
+        new_window = Categories(self, buttonname.cget("text"))
 
     def add_table(self):  # Maybe add in a shop column  https://www.youtube.com/watch?v=yk9ZhoLdINo
-        data = self.return_month(False)
+        self.data = self.return_month(False)
         self.frame = tk.Frame(self)
         self.frame.place(x=0, y=300)
-        self.table = Table(self.frame, dataframe=data)
+        edits = {
+            'Category': {'type': 'readonly'},
+            'Budget': {'type': 'editable', 'value': False}
+        }
+        self.table = Table(self.frame, dataframe=self.data, editors=edits)
         self.table.show()
+        self.original = self.data.copy(deep=True)
 
     def add_buttons(self):
         self.add_transaction_button = tk.Button(self, text="Add a transaction",
@@ -209,12 +235,19 @@ class App(tk.Tk):
         self.add_transaction_button.place(x=600, y=300)
         self.edit_category_button = tk.Button(self, text="Edit category", command=lambda: self.edit_category_clicked())
         self.edit_category_button.place(x=600, y=350)
+        self.submit_button = tk.Button(self, text="Submit changes", command=lambda: self.submit_changes())
+        self.submit_button.place(x=550, y=570)
 
     def transaction_button_clicked(self):
         new_window = Transaction_Widget(self)
 
     def edit_category_clicked(self):
         new_window = Categories_Widget(self)
+
+    def submit_changes(self):
+        diff_df = self.data.compare(self.original)
+        for row in self.data.itertuples():
+            update_transaction(row[5],row[1],row[2],row[3],row[4])
 
 
 class Transaction_Widget(tk.Toplevel):  # Self.destory to destory widget
@@ -250,7 +283,7 @@ class Transaction_Widget(tk.Toplevel):  # Self.destory to destory widget
             self.destroy()
         except ValueError:
             print("Enter a correct value")
-            self.destroy() #Use alt + f4 to delete a window
+            self.destroy()  # Use alt + f4 to delete a window
         else:
             print("Error")
             self.destroy()
@@ -292,9 +325,13 @@ class Categories_Widget(tk.Toplevel):
         cursor.execute(f"Select CategoryID from Category where CategoryName = '{category_name}'")
         exists = cursor.fetchone()
         if exists is None:
-            cursor.execute(
-                f"INSERT into Category (CategoryName, CategoryBudget) Values ('{category_name}',{category_budget})")  # Add check to ensure no duplication
-            conn.commit()
+            try:
+                cursor.execute(
+                    f"INSERT into Category (CategoryName, CategoryBudget) Values ('{category_name}',{category_budget})")  # Add check to ensure no duplication
+                conn.commit()
+            except UnboundLocalError:
+                print("No data inputted")
+            self.destroy()
         else:
             new_window = Error_Window(self, category_name, category_budget)
         # ----------------------------------------
@@ -324,13 +361,28 @@ class Error_Window(tk.Toplevel):
         update_category(self.name, self.budget)
         self.destroy()  # Destroy the new window
 
-
     def no_clicked(self):
         self.destroy()
 
         self.focus_set()
         self.grab_set()
         self.wait_window()
+
+
+class Categories(tk.Toplevel):
+    def __init__(self, args, category):
+        super().__init__(args)
+        self.geometry("600x400")
+        self.category = category
+        print(self.category)
+        data = return_monthly_dashboard("*", 1)
+        data = data[data['Category'] == self.category]
+        self.frame = tk.Frame(self)
+        self.frame.place(x=0, y=0)
+        self.table = Table(self.frame, dataframe=data)
+        self.table.show()
+        self.button = tk.Button(self, text="Close", command=lambda: self.destroy())
+        self.button.place(x=500, y=340)
 
 
 # -------------------------------------------------------------------------------------------------------------------#

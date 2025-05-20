@@ -166,3 +166,80 @@
 #     app = MainWindow()
 #     app.mainloop()
 
+
+import tkinter as tk
+import pandas as pd
+from pandastable import Table, TableModel
+
+class PandasTableApp:
+    def __init__(self, master):
+        self.master = master
+        self.master.title("PandasTable Update Checker")
+
+        # Create a sample DataFrame
+        self.df = pd.DataFrame({
+            'Name': ['Alice', 'Bob', 'Charlie'],
+            'Age': [30, 24, 35],
+            'City': ['New York', 'London', 'Paris']
+        })
+
+        # Create a frame to hold the table
+        self.table_frame = tk.Frame(master)
+        self.table_frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+        # Create the pandastable widget
+        self.table = pt = Table(self.table_frame, dataframe=self.df,
+                                showtoolbar=True, showstatusbar=True)
+        pt.show()
+
+        # Store an original snapshot of the DataFrame
+        # IMPORTANT: Use .copy(deep=True) to create a completely independent copy.
+        # Otherwise, changes to self.df will also affect self.original_df_snapshot.
+        self.original_df_snapshot = self.df.copy(deep=True)
+
+        # Add a button to check for updates
+        self.check_button = tk.Button(master, text="Check for Updates", command=self.check_for_updates)
+        self.check_button.pack(pady=5)
+
+        # Add a button to "save" changes (update the snapshot)
+        self.save_button = tk.Button(master, text="Save Changes", command=self.save_changes)
+        self.save_button.pack(pady=5)
+
+        self.status_label = tk.Label(master, text="No updates yet.")
+        self.status_label.pack(pady=5)
+
+    def check_for_updates(self):
+        # Access the current DataFrame from the table's model
+        current_df = self.table.model.df
+
+        # Compare the current DataFrame with the original snapshot
+        if not current_df.equals(self.original_df_snapshot):
+            self.status_label.config(text="Table values have been updated!", fg="red")
+
+            # Optional: Print the differences
+            print("Original Data:")
+            print(self.original_df_snapshot)
+            print("\nCurrent Data:")
+            print(current_df)
+
+            # Highlight specific changes (this can be complex for large DFs)
+            diff_df = current_df.compare(self.original_df_snapshot)
+            if not diff_df.empty:
+                print("\nDifferences:")
+                print(diff_df)
+        else:
+            self.status_label.config(text="No updates detected.", fg="black")
+
+    def save_changes(self):
+        # Access the current DataFrame
+        current_df = self.table.model.df
+
+        # Update the original snapshot to the current state
+        self.original_df_snapshot = current_df.copy(deep=True)
+        self.status_label.config(text="Changes saved (snapshot updated).", fg="green")
+        print("DataFrame snapshot updated to current values.")
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = PandasTableApp(root)
+    root.mainloop()
