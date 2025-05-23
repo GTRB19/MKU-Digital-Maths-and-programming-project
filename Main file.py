@@ -235,7 +235,7 @@ class App(tk.Tk): # Decided to use Objects for each window
         for row in self.data.itertuples():
             update_transaction(row[5],row[1],row[2],row[3],row[4])
 
-
+#
 class Transaction_Widget(tk.Toplevel):  # Creating a new window for transactions
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
